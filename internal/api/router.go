@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -65,8 +66,8 @@ func upgrader() *websocket.Upgrader {
 	}
 }
 
-func (r *Router) Run() {
-	err := r.router.Run(":8080")
+func (r *Router) Run(port string) {
+	err := r.router.Run(fmt.Sprintf(":%s", port))
 	if err != nil {
 		log.Printf("Server stopped err = %+v", err)
 	}

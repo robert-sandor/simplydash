@@ -23,48 +23,53 @@ func DefaultConfig() *Config {
 	}
 }
 
-func LoadConfig(path string, reader func(string) ([]byte, error)) (*Config, error) {
-	bytes, err := reader(path)
+func NewConfig(path string, reader func(string) ([]byte, error), writer func(string, []byte) error) *Config {
+	cfg := DefaultConfig()
+	err := cfg.Load(path, reader)
 	if err != nil {
 		if os.IsNotExist(err) {
 			log.Printf("Config file not found at %s - creating with defaults", path)
-			return createConfigFileWithDefaults(path)
+			err = createConfigFile(cfg, path, writer)
+			if err != nil {
+				log.Printf("Failed to create new config file with defaults at path %s err = %+v", path, err)
+			}
 		}
-		return nil, err
+		log.Printf("Failed to load config from path %s err = %+v", path, err)
 	}
-
-	config := DefaultConfig()
-	err = yaml.Unmarshal(bytes, &config)
-	if err != nil {
-		return nil, err
-	}
-
-	err = validateConfig(config)
-	if err != nil {
-		return nil, err
-	}
-	return config, nil
+	return cfg
 }
 
-func createConfigFileWithDefaults(path string) (*Config, error) {
-	config := DefaultConfig()
-	bytes, err := yaml.Marshal(config)
+func (c *Config) Load(path string, reader func(string) ([]byte, error)) error {
+	bytes, err := reader(path)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0700)
+	err = yaml.Unmarshal(bytes, &c)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	if _, err = file.Write(bytes); err != nil {
-		return nil, err
+	err = c.validate()
+	if err != nil {
+		return err
 	}
-
-	return config, nil
+	return nil
 }
 
-func validateConfig(config *Config) error {
+func createConfigFile(cfg *Config, path string, writer func(string, []byte) error) error {
+	bytes, err := yaml.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+
+	if err = writer(path, bytes); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Config) validate() error {
 	return nil
 }

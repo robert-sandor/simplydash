@@ -6,23 +6,28 @@ import (
 	"simplydash/internal/config"
 	"simplydash/internal/models"
 	"simplydash/internal/providers"
+	"simplydash/internal/utils"
 )
 
 type FileWatcher struct {
+	cfgPath       string
+	cfg           *config.Config
 	fileProviders []*providers.FileProvider
 	watcher       *fsnotify.Watcher
 }
 
-func NewFileWatcher(configs []config.FileProviderConfig) *FileWatcher {
+func NewFileWatcher(cfgPath string, cfg *config.Config, providerConfigs []config.FileProviderConfig) *FileWatcher {
 	var fpArr []*providers.FileProvider
-	for _, fpc := range configs {
+	for _, fpc := range providerConfigs {
 		p, err := providers.NewFileProvider(fpc)
 		if err != nil {
 			log.Printf("Failed to create file provider for file = %s", fpc.Path)
+			continue
 		}
 		fpArr = append(fpArr, p)
 	}
-	return &FileWatcher{fileProviders: fpArr, watcher: nil}
+
+	return &FileWatcher{cfgPath: cfgPath, cfg: cfg, fileProviders: fpArr, watcher: newWatcher()}
 }
 
 func (fw *FileWatcher) Load() {
@@ -36,7 +41,7 @@ func (fw *FileWatcher) Load() {
 
 func (fw *FileWatcher) Get() []models.Category {
 	createdCategories := make(map[string]int, 0)
-	var categories []models.Category
+	categories := make([]models.Category, 0)
 
 	for _, fp := range fw.fileProviders {
 		for _, pCat := range fp.Get() {
@@ -53,71 +58,95 @@ func (fw *FileWatcher) Get() []models.Category {
 	return categories
 }
 
-func (fw *FileWatcher) Watch(updateChannels *[]chan struct{}) {
-	var toWatch []*providers.FileProvider
+func (fw *FileWatcher) Watch(updateChannels *[]chan string) {
+	if fw.watcher == nil {
+		fw.watcher = newWatcher()
+	}
+
+	err := fw.watcher.Add(fw.cfgPath)
+	if err != nil {
+		log.Printf("Failed to add config file path %s to watcher")
+	}
+
+	var fpToWatch []*providers.FileProvider
 	for _, fp := range fw.fileProviders {
 		if fp.Watch {
-			toWatch = append(toWatch, fp)
+			fpToWatch = append(fpToWatch, fp)
 		}
 	}
 
-	if len(toWatch) == 0 {
-		return
-	}
-
-	w, err := fsnotify.NewWatcher()
-	if err != nil {
-		log.Print("Failed to create watcher.")
-		return
-	}
-
-	for _, fp := range toWatch {
-		err := w.Add(fp.Path)
+	for _, fp := range fpToWatch {
+		err := fw.watcher.Add(fp.Path)
 		if err != nil {
 			log.Printf("Failed to add file = %s to watcher err = %+v", fp.Path, err)
 		}
 	}
 
-	go fw.watch(w, toWatch, updateChannels)
+	go fw.watch(fpToWatch, updateChannels)
 }
 
 func (fw *FileWatcher) watch(
-	w *fsnotify.Watcher,
-	watch []*providers.FileProvider,
-	updateChannels *[]chan struct{},
+	fileProviders []*providers.FileProvider,
+	updateChannels *[]chan string,
 ) {
 	for {
 		select {
-		case err, ok := <-w.Errors:
+		case err, ok := <-fw.watcher.Errors:
 			if !ok {
 				return
 			}
 			log.Printf("Received error = %+v", err)
-		case e, ok := <-w.Events:
+		case e, ok := <-fw.watcher.Events:
 			if !ok {
 				return
 			}
 
-			var matched *providers.FileProvider
-			for _, fp := range watch {
-				if fp.Path == e.Name {
-					matched = fp
+			if e.Op == fsnotify.Write {
+				if fw.cfgPath == e.Name {
+					fw.updateCfg(updateChannels)
 					break
 				}
-			}
 
-			if matched == nil || !(e.Op == fsnotify.Write) {
-				continue
-			}
-
-			err := matched.Load()
-			if err != nil {
-				log.Printf("Failed to reload file %s err = %+v", matched.Path, err)
-			}
-
-			for _, c := range *updateChannels {
-				c <- struct{}{}
+				for _, fp := range fileProviders {
+					if fp.Path == e.Name {
+						fw.updateFileProvider(fp, updateChannels)
+						break
+					}
+				}
 			}
 		}
 	}
+}
+
+func (fw *FileWatcher) updateFileProvider(fp *providers.FileProvider, updateChannels *[]chan string) {
+	err := fp.Load()
+	if err != nil {
+		log.Printf("Failed to reload file %s err = %+v", fp.Path, err)
+		return
+	}
+
+	for _, c := range *updateChannels {
+		c <- "update-categories"
+	}
+}
+
+func (fw *FileWatcher) updateCfg(updateChannels *[]chan string) {
+	err := fw.cfg.Load(fw.cfgPath, utils.FileReader)
+	if err != nil {
+		log.Printf("Failed to reload config from path %s err = %+v", fw.cfgPath, err)
+		return
+	}
+
+	for _, c := range *updateChannels {
+		c <- "update-config"
+	}
+}
+
+func newWatcher() *fsnotify.Watcher {
+	w, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Printf("Failed to create fsnotify watcher err = %+v", err)
+		return nil
+	}
+	return w
 }

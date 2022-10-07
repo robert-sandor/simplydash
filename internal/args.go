@@ -8,6 +8,7 @@ import (
 type Args struct {
 	ConfigPath    arg
 	IconCachePath arg
+	Port          arg
 }
 
 type arg struct {
@@ -27,6 +28,11 @@ func NewArgs() *Args {
 			fromCmd:      flag.String("icon-cache", "", "path to icon cache"),
 			envVar:       "ICON_CACHE_PATH",
 			defaultValue: "icons",
+		},
+		Port: arg{
+			fromCmd:      flag.String("port", "", "port to use"),
+			envVar:       "PORT",
+			defaultValue: "8080",
 		},
 	}
 	flag.Parse()

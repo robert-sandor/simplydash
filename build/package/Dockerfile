@@ -2,8 +2,6 @@ FROM golang:1.19 AS backendBuild
 
 WORKDIR /app
 
-RUN pwd
-
 COPY ./go.mod ./
 COPY ./go.sum ./
 RUN go mod download
@@ -24,6 +22,11 @@ VOLUME /app/config /app/icons
 
 EXPOSE 8080
 
-ENTRYPOINT ["/app/simplydash", "--config", "/app/config/config.yml", "--icon-cache", "/app/icons"]
+ENV CONFIG_FILE_PATH "/app/config/config.yml"
+ENV ICON_CACHE_PATH "/app/icons"
 
-HEALTHCHECK --interval=5m --timeout=3s CMD curl -f http://localhost:8080/health || exit 1
+ENTRYPOINT ["/app/simplydash"]
+
+HEALTHCHECK --timeout=1s CMD curl -f http://localhost:8080/health || exit 1
+
+LABEL org.opencontainers.image.authors="sandorrobertk94@gmail.com"

@@ -2,5 +2,5 @@
 
 docker build \
   -f ./build/package/Dockerfile \
-  -t simplydash:dev \
+  -t simplydash \
   .

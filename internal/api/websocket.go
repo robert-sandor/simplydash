@@ -22,7 +22,7 @@ func Websocket(u *websocket.Upgrader, svc *internal.Service) gin.HandlerFunc {
 			}
 		}(ws)
 
-		updateChan := make(chan struct{})
+		updateChan := make(chan string)
 		svc.AddUpdateChannel(updateChan)
 		defer svc.RemoveUpdateChannel(updateChan)
 		defer close(updateChan)
@@ -39,7 +39,7 @@ func Websocket(u *websocket.Upgrader, svc *internal.Service) gin.HandlerFunc {
 
 func send(
 	ws *websocket.Conn,
-	updateChan chan struct{},
+	updateChan chan string,
 	stopChan chan struct{},
 	pingPeriod time.Duration,
 ) {
@@ -52,8 +52,8 @@ func send(
 			if err := ws.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(10*time.Second)); err != nil {
 				log.Printf("Failed to ping the client err = %+v", err)
 			}
-		case <-updateChan:
-			err := ws.WriteMessage(websocket.TextMessage, []byte("update"))
+		case message := <-updateChan:
+			err := ws.WriteMessage(websocket.TextMessage, []byte(message))
 			if err != nil {
 				log.Printf("Failed to send update message to client err = %+v", err)
 			}
