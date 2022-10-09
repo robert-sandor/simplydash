@@ -39,4 +39,7 @@ ENTRYPOINT ["/app/simplydash"]
 
 HEALTHCHECK --timeout=1s CMD curl -f http://localhost:8080/health || exit 1
 
+LABEL org.opencontainers.image.source="https://github.com/robert-sandor/simplydash"
+LABEL org.opencontainers.image.url="https://github.com/robert-sandor/simplydash"
+LABEL org.opencontainers.image.documentation="https://github.com/robert-sandor/simplydash/blob/main/README.md"
 LABEL org.opencontainers.image.authors="sandorrobertk94@gmail.com"
