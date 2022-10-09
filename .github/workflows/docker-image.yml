@@ -13,6 +13,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ghcr.io/robert-sandor/simplydash
+          tags: |
+            type=raw,dev
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
@@ -33,5 +45,5 @@ jobs:
           file: build/package/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: |
-            ghcr.io/robert-sandor/simplydash:dev
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
