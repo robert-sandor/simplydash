@@ -1,0 +1,25 @@
+settings:
+  name: simplydash
+  enable_health_indicators: true
+  theme:
+    dark:
+      background: rgb(36, 36, 36)
+      element_background: rgb(48, 48, 48)
+      foreground: rgba(255, 255, 255, 0.8)
+      foreground_secondary: rgba(255, 255, 255, 0.5)
+      accent_color: rgb(120, 174, 237)
+      success_color: rgb(38, 162, 105)
+      warning_color: rgb(205, 147, 9)
+      error_color: rgb(192, 28, 40)
+    light:
+      background: rgb(235, 235, 235)
+      element_background: rgb(250, 250, 250)
+      foreground: rgba(0, 0, 0, 0.8)
+      foreground_secondary: rgba(0, 0, 0, 0.5)
+      accent_color: rgb(28, 113, 216)
+      success_color: rgb(46, 194, 126)
+      warning_color: rgb(229, 165, 10)
+      error_color: rgb(224, 27, 36)
+files:
+  - path: deploy/samples/items.yml
+    watch: true

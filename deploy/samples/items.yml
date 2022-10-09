@@ -1,0 +1,6 @@
+- name: bookmarks
+  items:
+    - name: youtube
+      url: https://youtube.com
+      icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/youtube.png
+      description: youtube.com

@@ -1,0 +1,77 @@
+@font-face {
+  font-family: Cantarell;
+  src: url("./assets/cantarell.ttf");
+}
+
+* {
+  margin: 0;
+  box-sizing: border-box;
+  color: var(--foreground);
+  font-family: Cantarell, sans-serif;
+}
+
+body {
+  /* can be personalized */
+  --background: rgb(36, 36, 36);
+  --element-background: rgb(48, 48, 48);
+  --foreground: rgba(255, 255, 255, 0.8);
+  --foreground-secondary: rgba(255, 255, 255, 0.5);
+  --accent-color: rgb(120, 174, 237);
+  --success-color: #26a269;
+  --warning-color: #cd9309;
+  --error-color: #c01c28;
+  --shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+
+  /* should not be personalizable */
+  --indicator-size: 12px;
+  --header-height: 48px;
+  --icon-size: 48px;
+  --border-radius: 10px;
+  --button-height: 64px;
+
+  background-color: var(--background);
+}
+
+.element {
+  background-color: var(--element-background);
+  color: var(--foreground);
+  box-shadow: var(--shadow);
+}
+
+.hover:hover {
+  filter: brightness(115%);
+  cursor: pointer;
+}
+
+.container {
+  width: 100%;
+  height: 100%;
+}
+
+.unselectable {
+  -webkit-user-select: none;  /* Chrome all / Safari all */
+  -moz-user-select: none;     /* Firefox all */
+  -ms-user-select: none;      /* IE 10+ */
+  user-select: none;
+}
+
+@media only screen and (min-width: 768px) {
+  .container {
+    width: 768px;
+    margin: auto;
+  }
+}
+
+@media only screen and (min-width: 992px) {
+  .container {
+    width: 992px;
+    margin: auto;
+  }
+}
+
+@media only screen and (min-width: 1200px) {
+  .container {
+    width: 1200px;
+    margin: auto;
+  }
+}
