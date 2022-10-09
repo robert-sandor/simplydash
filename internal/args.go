@@ -2,6 +2,7 @@ package internal
 
 import (
 	"flag"
+	"fmt"
 	"os"
 )
 
@@ -9,6 +10,12 @@ type Args struct {
 	ConfigPath    arg
 	IconCachePath arg
 	Port          arg
+	LogLevel      arg
+}
+
+func (a *Args) String() string {
+	return fmt.Sprintf("Args: log_level = %s , port = %s , config_path = %s , icon_cache = %s",
+		a.LogLevel.Get(), a.Port.Get(), a.ConfigPath.Get(), a.IconCachePath.Get())
 }
 
 type arg struct {
@@ -33,6 +40,11 @@ func NewArgs() *Args {
 			fromCmd:      flag.String("port", "", "port to use"),
 			envVar:       "PORT",
 			defaultValue: "8080",
+		},
+		LogLevel: arg{
+			fromCmd:      flag.String("log-level", "", "logging level"),
+			envVar:       "LOG_LEVEL",
+			defaultValue: "WARN",
 		},
 	}
 	flag.Parse()

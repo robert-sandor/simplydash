@@ -1,4 +1,4 @@
-package models
+package internal
 
 type Item struct {
 	Name        string `json:"name" yaml:"name"`

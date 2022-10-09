@@ -1,152 +1,99 @@
 package internal
 
 import (
+	"errors"
 	"github.com/fsnotify/fsnotify"
-	"log"
-	"simplydash/internal/config"
-	"simplydash/internal/models"
-	"simplydash/internal/providers"
-	"simplydash/internal/utils"
+	"path"
 )
 
 type FileWatcher struct {
-	cfgPath       string
-	cfg           *config.Config
-	fileProviders []*providers.FileProvider
-	watcher       *fsnotify.Watcher
+	files   []*file
+	watcher *fsnotify.Watcher
 }
 
-func NewFileWatcher(cfgPath string, cfg *config.Config, providerConfigs []config.FileProviderConfig) *FileWatcher {
-	var fpArr []*providers.FileProvider
-	for _, fpc := range providerConfigs {
-		p, err := providers.NewFileProvider(fpc)
-		if err != nil {
-			log.Printf("Failed to create file provider for file = %s", fpc.Path)
-			continue
-		}
-		fpArr = append(fpArr, p)
-	}
-
-	return &FileWatcher{cfgPath: cfgPath, cfg: cfg, fileProviders: fpArr, watcher: newWatcher()}
+func NewFileWatcher() *FileWatcher {
+	return &FileWatcher{files: make([]*file, 0), watcher: nil}
 }
 
-func (fw *FileWatcher) Load() {
-	for _, fp := range fw.fileProviders {
-		err := fp.Load()
-		if err != nil {
-			log.Printf("Failed to load file provider for file = %s", fp.Path)
-		}
-	}
+type file struct {
+	path    string
+	onWrite func()
 }
 
-func (fw *FileWatcher) Get() []models.Category {
-	createdCategories := make(map[string]int, 0)
-	categories := make([]models.Category, 0)
-
-	for _, fp := range fw.fileProviders {
-		for _, pCat := range fp.Get() {
-			if index, ok := createdCategories[pCat.Name]; ok {
-				categories[index].Items = append(categories[index].Items, pCat.Items...)
-				continue
-			}
-
-			createdCategories[pCat.Name] = len(categories)
-			categories = append(categories, pCat)
-		}
-	}
-
-	return categories
-}
-
-func (fw *FileWatcher) Watch(updateChannels *[]chan string) {
-	if fw.watcher == nil {
-		fw.watcher = newWatcher()
-	}
-
-	err := fw.watcher.Add(fw.cfgPath)
+func (w *FileWatcher) Init() error {
+	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.Printf("Failed to add config file path %s to watcher")
+		Log.Error.Printf("Failed to create fsnotify watcher err = %+v", err)
+		return err
 	}
+	w.watcher = watcher
 
-	var fpToWatch []*providers.FileProvider
-	for _, fp := range fw.fileProviders {
-		if fp.Watch {
-			fpToWatch = append(fpToWatch, fp)
-		}
-	}
-
-	for _, fp := range fpToWatch {
-		err := fw.watcher.Add(fp.Path)
-		if err != nil {
-			log.Printf("Failed to add file = %s to watcher err = %+v", fp.Path, err)
-		}
-	}
-
-	go fw.watch(fpToWatch, updateChannels)
+	Log.Debug.Printf("Successfully initialized fsnotify watcher. Starting watch loop ...")
+	go w.watchLoop()
+	return nil
 }
 
-func (fw *FileWatcher) watch(
-	fileProviders []*providers.FileProvider,
-	updateChannels *[]chan string,
-) {
+func (w *FileWatcher) Add(path string, onWrite func()) error {
+	if w.watcher == nil {
+		return errors.New("file watcher not initialized")
+	}
+
+	for _, f := range w.files {
+		if f.path == path {
+			return nil
+		}
+	}
+
+	err := w.watcher.Add(path)
+	if err != nil {
+		return err
+	}
+
+	w.files = append(w.files, &file{path: path, onWrite: onWrite})
+	return nil
+}
+
+func (w *FileWatcher) Remove(path string) error {
+	if w.watcher == nil {
+		return errors.New("file watcher not initialized")
+	}
+
+	for i, f := range w.files {
+		if f.path == path {
+			err := w.watcher.Remove(path)
+			if err != nil {
+				return err
+			}
+			w.files = append(w.files[:i], w.files[i+1:]...)
+			return nil
+		}
+	}
+	return nil
+}
+
+func (w *FileWatcher) watchLoop() {
 	for {
 		select {
-		case err, ok := <-fw.watcher.Errors:
+		case err, ok := <-w.watcher.Errors:
 			if !ok {
+				Log.Info.Println("Watcher closed, stopping watch loop.")
 				return
 			}
-			log.Printf("Received error = %+v", err)
-		case e, ok := <-fw.watcher.Events:
+			Log.Debug.Printf("fsnotify: got error = %+v", err)
+		case event, ok := <-w.watcher.Events:
 			if !ok {
+				Log.Info.Println("Watcher closed, stopping watch loop.")
 				return
 			}
+			Log.Debug.Printf("fsnotify: got event = %+v", event)
 
-			if e.Op == fsnotify.Write {
-				if fw.cfgPath == e.Name {
-					fw.updateCfg(updateChannels)
-					break
-				}
-
-				for _, fp := range fileProviders {
-					if fp.Path == e.Name {
-						fw.updateFileProvider(fp, updateChannels)
-						break
+			if event.Op == fsnotify.Write {
+				for _, f := range w.files {
+					if path.Clean(f.path) == path.Clean(event.Name) {
+						f.onWrite()
 					}
 				}
 			}
 		}
 	}
-}
-
-func (fw *FileWatcher) updateFileProvider(fp *providers.FileProvider, updateChannels *[]chan string) {
-	err := fp.Load()
-	if err != nil {
-		log.Printf("Failed to reload file %s err = %+v", fp.Path, err)
-		return
-	}
-
-	for _, c := range *updateChannels {
-		c <- "update-categories"
-	}
-}
-
-func (fw *FileWatcher) updateCfg(updateChannels *[]chan string) {
-	err := fw.cfg.Load(fw.cfgPath, utils.FileReader)
-	if err != nil {
-		log.Printf("Failed to reload config from path %s err = %+v", fw.cfgPath, err)
-		return
-	}
-
-	for _, c := range *updateChannels {
-		c <- "update-config"
-	}
-}
-
-func newWatcher() *fsnotify.Watcher {
-	w, err := fsnotify.NewWatcher()
-	if err != nil {
-		log.Printf("Failed to create fsnotify watcher err = %+v", err)
-		return nil
-	}
-	return w
 }

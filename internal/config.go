@@ -1,8 +1,7 @@
-package config
+package internal
 
 import (
 	"gopkg.in/yaml.v3"
-	"log"
 	"os"
 )
 
@@ -28,14 +27,16 @@ func NewConfig(path string, reader func(string) ([]byte, error), writer func(str
 	err := cfg.Load(path, reader)
 	if err != nil {
 		if os.IsNotExist(err) {
-			log.Printf("Config file not found at %s - creating with defaults", path)
+			Log.Info.Printf("No config file found at path %s - creating with defaults", path)
 			err = createConfigFile(cfg, path, writer)
 			if err != nil {
-				log.Printf("Failed to create new config file with defaults at path %s err = %+v", path, err)
+				Log.Error.Printf("Failed to create new config file with defaults at path %s err = %+v", path, err)
 			}
+			return cfg
 		}
-		log.Printf("Failed to load config from path %s err = %+v", path, err)
+		Log.Error.Printf("Failed to load config from path %s err = %+v", path, err)
 	}
+	Log.Debug.Printf("Successfully loaded config = %+v", cfg)
 	return cfg
 }
 

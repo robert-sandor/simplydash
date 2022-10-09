@@ -1,13 +1,10 @@
-package api
+package internal
 
 import (
 	"github.com/gin-gonic/gin"
 	"io"
 	"log"
 	"net/http"
-	"simplydash/internal"
-	"simplydash/internal/config"
-	"simplydash/internal/models"
 	"strings"
 )
 
@@ -17,13 +14,13 @@ func Health() gin.HandlerFunc {
 	}
 }
 
-func GetConfig(cfg *config.Config) gin.HandlerFunc {
+func GetConfig(cfg *Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.IndentedJSON(http.StatusOK, cfg)
 	}
 }
 
-func GetCategories(get func() []models.Category) gin.HandlerFunc {
+func GetCategories(get func() []Category) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.IndentedJSON(http.StatusOK, get())
 	}
@@ -54,7 +51,7 @@ func ItemHealthcheck() gin.HandlerFunc {
 	}
 }
 
-func GetIcon(iconCache *internal.IconCache) gin.HandlerFunc {
+func GetIcon(iconCache *IconCache) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		urlStr := c.Query("url")
 		icon, err := iconCache.GetIcon(urlStr)

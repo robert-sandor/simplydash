@@ -1,14 +1,13 @@
-package api
+package internal
 
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"log"
-	"simplydash/internal"
 	"time"
 )
 
-func Websocket(u *websocket.Upgrader, svc *internal.Service) gin.HandlerFunc {
+func Websocket(u *websocket.Upgrader, notifier *WebsocketNotifier) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ws, err := u.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
@@ -22,10 +21,8 @@ func Websocket(u *websocket.Upgrader, svc *internal.Service) gin.HandlerFunc {
 			}
 		}(ws)
 
-		updateChan := make(chan string)
-		svc.AddUpdateChannel(updateChan)
-		defer svc.RemoveUpdateChannel(updateChan)
-		defer close(updateChan)
+		updateChan := notifier.NewChannel()
+		defer notifier.RemoveChannel(updateChan)
 
 		stopChan := make(chan struct{})
 		defer close(stopChan)
@@ -67,9 +64,7 @@ func listen(ws *websocket.Conn) {
 	for {
 		messageType, bytes, err := ws.ReadMessage()
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseNormalClosure, websocket.CloseNoStatusReceived) {
-				log.Printf("Error when reading message from client err = %+v", err)
-			}
+			log.Printf("Error when reading message from client err = %+v", err)
 			return
 		}
 

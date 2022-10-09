@@ -1,4 +1,4 @@
-package api
+package internal
 
 import (
 	"fmt"
@@ -7,36 +7,19 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
-	"simplydash/internal"
-	"simplydash/internal/config"
 	"time"
 )
 
 type Router struct {
-	cfg        *config.Config
-	svc        *internal.Service
-	router     *gin.Engine
-	wsUpgrader *websocket.Upgrader
-	iconCache  *internal.IconCache
+	ginRouter *gin.Engine
 }
 
-func NewRouter(
-	cfg *config.Config,
-	svc *internal.Service,
-	iconCache *internal.IconCache,
-) *Router {
-	u := upgrader()
-	r := router(cfg, svc, iconCache, u)
-	return &Router{
-		cfg:        cfg,
-		svc:        svc,
-		router:     r,
-		wsUpgrader: u,
-		iconCache:  iconCache,
-	}
+func NewRouter(cfg *Config, svc *AggregatorService, iconCache *IconCache, notifier *WebsocketNotifier) *Router {
+	r := router(cfg, svc, iconCache, notifier)
+	return &Router{ginRouter: r}
 }
 
-func router(cfg *config.Config, svc *internal.Service, iconCache *internal.IconCache, upgrader *websocket.Upgrader) *gin.Engine {
+func router(cfg *Config, svc *AggregatorService, iconCache *IconCache, notifier *WebsocketNotifier) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 
 	r := gin.Default()
@@ -51,7 +34,11 @@ func router(cfg *config.Config, svc *internal.Service, iconCache *internal.IconC
 	r.GET("/api/categories", GetCategories(svc.Get))
 	r.GET("/api/url/health", ItemHealthcheck())
 	r.GET("/api/icon", GetIcon(iconCache))
-	r.GET("/api/ws", Websocket(upgrader, svc))
+	r.GET("/api/ws", Websocket(upgrader(), notifier))
+
+	r.StaticFile("/", "web/index.html")
+	r.Static("/assets", "web/assets")
+
 	return r
 }
 
@@ -67,7 +54,7 @@ func upgrader() *websocket.Upgrader {
 }
 
 func (r *Router) Run(port string) {
-	err := r.router.Run(fmt.Sprintf(":%s", port))
+	err := r.ginRouter.Run(fmt.Sprintf(":%s", port))
 	if err != nil {
 		log.Printf("Server stopped err = %+v", err)
 	}

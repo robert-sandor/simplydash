@@ -1,4 +1,4 @@
-package config
+package internal
 
 type Settings struct {
 	Name                   string `json:"name" yaml:"name"`
