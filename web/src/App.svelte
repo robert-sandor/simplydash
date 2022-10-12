@@ -17,6 +17,7 @@
     };
     const updateConfig = () => {
         apiClient.getConfig().then((r) => (config = r));
+        updateCategories();
     };
 
     onMount(() => {

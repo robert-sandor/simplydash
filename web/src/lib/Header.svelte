@@ -26,11 +26,6 @@
         document.body.style.setProperty('--error-color', theme.error_color);
     }
 
-    let addModalVisible = false;
-    function showAddModal() {
-        addModalVisible = true;
-    }
-
     function onKeyDown(e) {
         if (shortcuts[e.keyCode] !== undefined) {
             shortcuts[e.keyCode]();
