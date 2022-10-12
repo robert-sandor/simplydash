@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [v0.0.7](https://github.com/robert-sandor/simplydash/releases/tag/v0.0.7) - 2022-10-12
+
+<small>[Compare with v0.0.6](https://github.com/robert-sandor/simplydash/compare/v0.0.6...v0.0.7)</small>
+
+### Fixed
+- Fix: not pushing tags part2 ([2d0414c](https://github.com/robert-sandor/simplydash/commit/2d0414cf76cd7e765823155a2ea147bbdcdd1439) by Robert Sandor).
+
+
 ## [v0.0.6](https://github.com/robert-sandor/simplydash/releases/tag/v0.0.6) - 2022-10-12
 
 <small>[Compare with v0.0.5](https://github.com/robert-sandor/simplydash/compare/v0.0.5...v0.0.6)</small>
