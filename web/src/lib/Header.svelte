@@ -1,18 +1,18 @@
 <script lang="ts">
-    import { onMount } from "svelte";
+    import {afterUpdate, onMount} from "svelte";
     import {Config, ThemeColors} from "./config";
 
     export let config: Config;
+    let currentTheme: ThemeColors = undefined;
 
     let shortcuts = {
         84: toggleTheme,
     };
 
-    let isDarkTheme: boolean = true;
     function toggleTheme() {
-        isDarkTheme = !isDarkTheme;
-        const currentTheme = isDarkTheme ? config.settings.theme.dark : config.settings.theme.light;
-        setTheme(currentTheme)
+        currentTheme = (currentTheme == undefined || currentTheme == config.settings.theme.dark) ?
+            config.settings.theme.light : config.settings.theme.dark;
+        setTheme(currentTheme);
     }
 
     function setTheme(theme: ThemeColors) {
@@ -33,7 +33,13 @@
     }
 
     onMount(() => {
-        setTheme(config.settings.theme.dark)
+        currentTheme = config.settings.theme.dark;
+    })
+
+    afterUpdate(() => {
+        console.log("after update header")
+        currentTheme = config.settings.theme.dark;
+        setTheme(currentTheme)
     })
 </script>
 
