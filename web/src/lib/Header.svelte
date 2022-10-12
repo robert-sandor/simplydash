@@ -1,21 +1,25 @@
 <script lang="ts">
     import {afterUpdate, onMount} from "svelte";
-    import {Config, ThemeColors} from "./config";
+    import {Config} from "./config";
 
     export let config: Config;
-    let currentTheme: ThemeColors = undefined;
+    let darkMode: boolean = true;
 
     let shortcuts = {
+        // T - toggles the theme
         84: toggleTheme,
     };
 
     function toggleTheme() {
-        currentTheme = (currentTheme == undefined || currentTheme == config.settings.theme.dark) ?
-            config.settings.theme.light : config.settings.theme.dark;
-        setTheme(currentTheme);
+        darkMode = !darkMode;
+        setTheme(darkMode);
     }
 
-    function setTheme(theme: ThemeColors) {
+    function setTheme(darkMode: boolean) {
+        darkMode = darkMode;
+        localStorage.setItem('theme', darkMode ? 'dark' : 'light')
+
+        const theme = darkMode ? config.settings.theme.dark : config.settings.theme.light;
         document.body.style.setProperty('--background', theme.background);
         document.body.style.setProperty('--element-background', theme.element_background);
         document.body.style.setProperty('--foreground', theme.foreground);
@@ -32,14 +36,33 @@
         }
     }
 
+    function initialTheme(defaultValue: boolean): boolean {
+        if (localStorage.theme === 'dark') {
+            return true;
+        }
+
+        if (localStorage.theme === 'light') {
+            return false;
+        }
+
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            return true;
+        }
+
+        if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+            return false;
+        }
+
+        return defaultValue;
+    }
+
     onMount(() => {
-        currentTheme = config.settings.theme.dark;
+        darkMode = initialTheme(true)
+        setTheme(darkMode)
     })
 
     afterUpdate(() => {
-        console.log("after update header")
-        currentTheme = config.settings.theme.dark;
-        setTheme(currentTheme)
+        setTheme(darkMode)
     })
 </script>
 
