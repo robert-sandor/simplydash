@@ -5,7 +5,7 @@ if (($# != 1)); then
   exit 1
 fi
 
-git-changelog -o CHANGELOG.md
+git-changelog -o CHANGELOG.md .
 git add CHANGELOG.md
 git commit -m "release: $1"
 git tag "$1"
