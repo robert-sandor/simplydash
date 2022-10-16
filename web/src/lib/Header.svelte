@@ -67,7 +67,7 @@
 </script>
 
 <div class="header container">
-    <div class="name unselectable">{config.settings.name}</div>
+    <div class="name text unselectable">{config.settings.name}</div>
     <div class="button" on:click={toggleTheme}>
         <svg
             class="icon"
@@ -106,7 +106,7 @@
     }
 
     .button:hover {
-        fill: var(--foreground);
+        fill: var(--accent-color);
         cursor: pointer;
     }
 

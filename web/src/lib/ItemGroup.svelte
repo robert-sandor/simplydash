@@ -18,7 +18,7 @@
 </script>
 
 <div class="container">
-    <div class="element unselectable hover header" on:click={ toggle }>{name}</div>
+    <div class="element unselectable header hover" on:click={ toggle }>{name}</div>
     {#if show && items !== undefined}
         <div class="group-container">
             {#each items as item}

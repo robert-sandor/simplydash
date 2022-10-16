@@ -29,7 +29,7 @@
 </script>
 
 <a href={url}>
-    <div class="element hover button">
+    <div class="element button hover">
         {#if showIcon}
             <div class="icon-container">
                 <img

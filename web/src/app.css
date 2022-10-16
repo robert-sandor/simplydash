@@ -6,7 +6,6 @@
 * {
   margin: 0;
   box-sizing: border-box;
-  color: var(--foreground);
   font-family: Cantarell, sans-serif;
 }
 
@@ -20,7 +19,7 @@ body {
   --success-color: #26a269;
   --warning-color: #cd9309;
   --error-color: #c01c28;
-  --shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+  --shadow: 0 0 5px rgba(0, 0, 0, 0.25);
 
   /* should not be personalizable */
   --indicator-size: 12px;
@@ -32,6 +31,10 @@ body {
   background-color: var(--background);
 }
 
+.text {
+  color: var(--foreground);
+}
+
 .element {
   background-color: var(--element-background);
   color: var(--foreground);
@@ -39,7 +42,7 @@ body {
 }
 
 .hover:hover {
-  filter: brightness(115%);
+  color: var(--accent-color);
   cursor: pointer;
 }
 
