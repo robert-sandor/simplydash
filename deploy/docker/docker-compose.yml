@@ -5,7 +5,7 @@ services:
   simplydash:
     container_name: simplydash
     hostname: simplydash
-    image: ghcr.io/robert-sandor/simplydash:dev
+    image: ghcr.io/robert-sandor/simplydash
     restart: unless-stopped
     ports:
       - "8080:8080"
