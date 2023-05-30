@@ -22,7 +22,6 @@ func main() {
 	cliArgs := CliArguments{}
 	kong.Parse(&cliArgs)
 	setupLogging(cliArgs.Log)
-	logrus.WithField("args", cliArgs).Info("starting...")
 
 	startServer(cliArgs)
 }
