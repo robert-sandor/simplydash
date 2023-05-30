@@ -4,6 +4,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -20,8 +21,8 @@ type WebConfig struct {
 	BackgroundImage string `json:"background_image" yaml:"background_image"`
 }
 
-func DefaultConfig() Config {
-	return Config{
+func DefaultConfig() *Config {
+	return &Config{
 		Docker: make(map[string]DockerConfig),
 		Web: WebConfig{
 			Name:            "simplydash",
@@ -44,30 +45,56 @@ const (
 
 type ConfigService interface {
 	Init() error
+	Stop()
 }
 
 type ConfigServiceImpl struct {
-	filePath string
+	filePath  string
+	config    *Config
+	stopWatch chan struct{}
 }
 
 func NewConfigService(configPath string) ConfigService {
 	return &ConfigServiceImpl{
-		filePath: path.Join(configPath, configFileName),
+		filePath:  path.Join(configPath, configFileName),
+		config:    DefaultConfig(),
+		stopWatch: make(chan struct{}, 1),
 	}
 }
 
 func (configService *ConfigServiceImpl) Init() error {
 	logrus.WithField("configFile", configService.filePath).Debug("checking if config file exists")
 	if _, err := os.Stat(configService.filePath); err == nil {
-		return configService.loadConfigFile()
+		configService.loadConfigFile()
+		if err != nil {
+			return err
+		}
+	} else {
+		err := configService.createConfigFile()
+		if err != nil {
+			return err
+		}
 	}
 
-	return configService.createConfigFile()
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return err
+	}
+
+	err = watcher.Add(configService.filePath)
+	if err != nil {
+		return err
+	}
+
+	go configService.watchFile(watcher)
+	return nil
+}
+
+func (configService *ConfigServiceImpl) Stop() {
+	configService.stopWatch <- struct{}{}
 }
 
 func (configService *ConfigServiceImpl) createConfigFile() error {
-	config := DefaultConfig()
-
 	logrus.WithField("configFile", configService.filePath).Debug("creating new config file")
 	file, err := os.Create(configService.filePath)
 	if err != nil {
@@ -75,8 +102,8 @@ func (configService *ConfigServiceImpl) createConfigFile() error {
 	}
 	defer file.Close()
 
-	logrus.WithField("config", config).Debug("marshalling config")
-	bytes, err := yaml.Marshal(config)
+	logrus.WithField("config", configService.config).Debug("marshalling config")
+	bytes, err := yaml.Marshal(configService.config)
 	if err != nil {
 		return err
 	}
@@ -91,5 +118,40 @@ func (configService *ConfigServiceImpl) createConfigFile() error {
 }
 
 func (configService *ConfigServiceImpl) loadConfigFile() error {
+	bytes, err := os.ReadFile(configService.filePath)
+	if err != nil {
+		return err
+	}
+
+	err = yaml.Unmarshal(bytes, configService.config)
+	if err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func (configService *ConfigServiceImpl) watchFile(watcher *fsnotify.Watcher) {
+	defer func() {
+		err := watcher.Close()
+		if err != nil {
+			logrus.WithField("err", err).Error("failed to close fsnotify")
+		}
+	}()
+
+	for {
+		select {
+		case <-configService.stopWatch:
+			logrus.Info("received stop signal")
+			return
+		case err := <-watcher.Errors:
+			logrus.WithField("err", err).Error("fsnotify")
+			return
+		case event := <-watcher.Events:
+			logrus.WithField("event", event).Debug("fsnotify")
+			if event.Op.Has(fsnotify.Write) {
+				configService.loadConfigFile()
+			}
+		}
+	}
 }
