@@ -23,6 +23,12 @@ func main() {
 	kong.Parse(&cliArgs)
 	setupLogging(cliArgs.Log)
 
+	configService := NewConfigService(cliArgs.ConfigPath)
+	err := configService.Init()
+	if err != nil {
+		logrus.WithField("err", err).Fatal("config service failed to start")
+	}
+
 	startServer(cliArgs)
 }
 
