@@ -14,10 +14,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func setupRoutes(engine *gin.Engine) {
-	engine.GET("/health", func(ctx *gin.Context) {
+func healthcheck() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
 		ctx.Status(200)
-	})
+	}
+}
+
+func setupRoutes(engine *gin.Engine) {
+	engine.GET("/health", healthcheck())
 }
 
 func startServer(cliArgs CliArguments) {
