@@ -27,6 +27,10 @@ func setupRoutes(engine *gin.Engine) {
 func startServer(cliArgs CliArguments) {
 	logrus.WithField("args", cliArgs).Info("starting...")
 
+	if cliArgs.Log.Level != "debug" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	engine := gin.New()
 	engine.Use(gin.Recovery())
 	engine.Use(LoggingMiddleware())
