@@ -1,7 +1,10 @@
 package main
 
 import (
+	"time"
+
 	"github.com/alecthomas/kong"
+	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
 
@@ -23,6 +26,36 @@ func main() {
 	kong.Parse(&cliArgs)
 	setupLogging(cliArgs.Log)
 	logrus.WithField("args", cliArgs).Info("starting...")
+
+	engine := gin.New()
+	engine.Use(gin.Recovery())
+	engine.Use(LoggingMiddleware())
+	engine.GET("/health", func(ctx *gin.Context) {
+		ctx.Status(200)
+	})
+
+	engine.Run()
+}
+
+func LoggingMiddleware() gin.HandlerFunc {
+	return func(context *gin.Context) {
+		startTime := time.Now()
+		context.Next()
+		endTime := time.Now()
+		latency := endTime.Sub(startTime)
+		method := context.Request.Method
+		uri := context.Request.RequestURI
+		statusCode := context.Writer.Status()
+		clientIP := context.ClientIP()
+		logrus.WithFields(logrus.Fields{
+			"method":  method,
+			"uri":     uri,
+			"status":  statusCode,
+			"latency": latency,
+			"client":  clientIP,
+		}).Info("HTTP request")
+		context.Next()
+	}
 }
 
 func setupLogging(logArgs LogArguments) {
