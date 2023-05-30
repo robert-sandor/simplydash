@@ -1,9 +1,8 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/alecthomas/kong"
+	"github.com/sirupsen/logrus"
 )
 
 var CliArguments struct {
@@ -19,5 +18,20 @@ var CliArguments struct {
 
 func main() {
 	kong.Parse(&CliArguments)
-	fmt.Printf("%+v\n", CliArguments)
+	setupLogging(CliArguments.Log.Level, CliArguments.Log.Format)
+	logrus.WithField("args", CliArguments).Info("starting...")
+}
+
+func setupLogging(level, format string) {
+	logrusLevel, _ := logrus.ParseLevel(level)
+	logrus.SetLevel(logrusLevel)
+
+	if "json" == format {
+		logrus.SetFormatter(&logrus.JSONFormatter{})
+	} else {
+		logrus.SetFormatter(&logrus.TextFormatter{
+			FullTimestamp:    true,
+			QuoteEmptyFields: true,
+		})
+	}
 }
