@@ -1,6 +1,13 @@
 package main
 
 import (
+	"context"
+	"errors"
+	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/alecthomas/kong"
@@ -34,7 +41,30 @@ func main() {
 		ctx.Status(200)
 	})
 
-	engine.Run()
+	server := &http.Server{
+		Addr:    fmt.Sprintf("%s:%d", cliArgs.Host, cliArgs.Port),
+		Handler: engine,
+	}
+
+	go func() {
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logrus.WithField("err", err).Fatal("failed to start server")
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	logrus.Info("shutting down")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		logrus.Fatal("forcing server shutdown")
+	}
+
+	logrus.Info("server shut down")
 }
 
 func LoggingMiddleware() gin.HandlerFunc {
