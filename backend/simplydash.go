@@ -1,6 +1,10 @@
 package main
 
 import (
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/alecthomas/kong"
 	"github.com/sirupsen/logrus"
 )
@@ -29,7 +33,18 @@ func main() {
 		logrus.WithField("err", err).Fatal("config service failed to start")
 	}
 
-	startServer(cliArgs)
+	routes := &Routes{}
+
+	httpServer := NewHttpServer(cliArgs, routes)
+	httpServer.Start()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	logrus.Info("shutting down")
+
+	httpServer.Stop()
+	configService.Stop()
 }
 
 func setupLogging(logArgs LogArguments) {

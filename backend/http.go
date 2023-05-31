@@ -5,29 +5,20 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
 
-func healthcheck() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		ctx.Status(200)
-	}
+type HttpServer struct {
+	cliArgs CliArguments
+	routes  *Routes
+	server  *http.Server
 }
 
-func setupRoutes(engine *gin.Engine) {
-	engine.GET("/health", healthcheck())
-}
-
-func startServer(cliArgs CliArguments) {
-	logrus.WithField("args", cliArgs).Info("starting...")
-
-	if cliArgs.Log.Level != "debug" {
+func NewHttpServer(cliArgs CliArguments, routes *Routes) *HttpServer {
+	if cliArgs.Log.Level != logrus.DebugLevel.String() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
@@ -35,28 +26,32 @@ func startServer(cliArgs CliArguments) {
 	engine.Use(gin.Recovery())
 	engine.Use(LoggingMiddleware())
 
-	setupRoutes(engine)
+	routes.setup(engine)
 
-	server := &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", cliArgs.Host, cliArgs.Port),
-		Handler: engine,
+	return &HttpServer{
+		cliArgs: cliArgs,
+		routes:  routes,
+		server: &http.Server{
+			Addr:    fmt.Sprintf("%s:%d", cliArgs.Host, cliArgs.Port),
+			Handler: engine,
+		},
 	}
+}
 
+func (httpServer *HttpServer) Start() {
 	go func() {
-		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		err := httpServer.server.ListenAndServe()
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logrus.WithField("err", err).Fatal("failed to start server")
 		}
 	}()
+}
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	logrus.Info("shutting down")
-
+func (httpServer *HttpServer) Stop() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	if err := server.Shutdown(ctx); err != nil {
+	if err := httpServer.server.Shutdown(ctx); err != nil {
 		logrus.Fatal("forcing server shutdown")
 	}
 
