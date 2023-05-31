@@ -46,6 +46,7 @@ const (
 type ConfigService interface {
 	Init() error
 	Stop()
+	Get() Config
 }
 
 type ConfigServiceImpl struct {
@@ -92,6 +93,10 @@ func (configService *ConfigServiceImpl) Init() error {
 
 func (configService *ConfigServiceImpl) Stop() {
 	configService.stopWatch <- struct{}{}
+}
+
+func (configService *ConfigServiceImpl) Get() Config {
+	return *configService.config
 }
 
 func (configService *ConfigServiceImpl) createConfigFile() error {

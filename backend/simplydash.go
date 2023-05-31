@@ -33,7 +33,7 @@ func main() {
 		logrus.WithField("err", err).Fatal("config service failed to start")
 	}
 
-	routes := &Routes{}
+	routes := NewRoutes(configService)
 
 	httpServer := NewHttpServer(cliArgs, routes)
 	httpServer.Start()
