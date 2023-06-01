@@ -10,6 +10,7 @@ import (
 )
 
 type Config struct {
+	Apps   []App                   `json:"apps"   yaml:"apps"`
 	Docker map[string]DockerConfig `json:"docker" yaml:"docker"`
 	Web    WebConfig               `json:"web"    yaml:"web"`
 }
@@ -23,6 +24,7 @@ type WebConfig struct {
 
 func DefaultConfig() *Config {
 	return &Config{
+		Apps:   make([]App, 0),
 		Docker: make(map[string]DockerConfig),
 		Web: WebConfig{
 			Name:            "simplydash",
@@ -66,7 +68,7 @@ func NewConfigService(configPath string) ConfigService {
 func (configService *ConfigServiceImpl) Init() error {
 	logrus.WithField("configFile", configService.filePath).Debug("checking if config file exists")
 	if _, err := os.Stat(configService.filePath); err == nil {
-		configService.loadConfigFile()
+		err = configService.loadConfigFile()
 		if err != nil {
 			return err
 		}
@@ -128,11 +130,13 @@ func (configService *ConfigServiceImpl) loadConfigFile() error {
 		return err
 	}
 
-	err = yaml.Unmarshal(bytes, configService.config)
+	newConfig := DefaultConfig()
+	err = yaml.Unmarshal(bytes, newConfig)
 	if err != nil {
 		return err
 	}
 
+	configService.config = newConfig
 	return nil
 }
 
@@ -155,7 +159,9 @@ func (configService *ConfigServiceImpl) watchFile(watcher *fsnotify.Watcher) {
 		case event := <-watcher.Events:
 			logrus.WithField("event", event).Debug("fsnotify")
 			if event.Op.Has(fsnotify.Write) {
-				configService.loadConfigFile()
+				if err := configService.loadConfigFile(); err != nil {
+					logrus.WithField("err", err).Error("updating config")
+				}
 			}
 		}
 	}
