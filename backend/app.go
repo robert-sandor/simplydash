@@ -10,10 +10,17 @@ import (
 )
 
 type App struct {
-	Name        string `yaml:"name"        json:"name"`
-	Description string `yaml:"description" json:"description"`
-	Link        string `yaml:"link"        json:"link"`
-	Icon        string `yaml:"icon"        json:"icon"`
+	Name        string         `yaml:"name"        json:"name"`
+	Description string         `yaml:"description" json:"description"`
+	Link        string         `yaml:"link"        json:"link"`
+	Icon        string         `yaml:"icon"        json:"icon"`
+	Healthcheck AppHealthcheck `yaml:"healthcheck" json:"healthcheck"`
+}
+
+type AppHealthcheck struct {
+	Disable               bool   `json:"disable"                  yaml:"disable"`
+	Link                  string `json:"link"                     yaml:"link"`
+	PollIntervalInSeconds int    `json:"poll_interval_in_seconds" yaml:"poll_interval_in_seconds"`
 }
 
 var spaceRegexp = regexp.MustCompile(`\s+`)
@@ -44,6 +51,18 @@ func (app *App) validate() error {
 
 	if "" == app.Icon {
 		app.Icon = defaultIcon(app.Name)
+	}
+
+	return app.Healthcheck.validate(app.Link)
+}
+
+func (heathcheck *AppHealthcheck) validate(appLink string) error {
+	if "" == heathcheck.Link {
+		heathcheck.Link = appLink
+	}
+
+	if 0 == heathcheck.PollIntervalInSeconds {
+		heathcheck.PollIntervalInSeconds = 60
 	}
 
 	return nil
