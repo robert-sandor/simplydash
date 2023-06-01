@@ -2,6 +2,9 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"regexp"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -13,9 +16,17 @@ type App struct {
 	Icon        string `yaml:"icon"        json:"icon"`
 }
 
+var spaceRegexp = regexp.MustCompile(`\s+`)
+
 func defaultIcon(name string) string {
-	// TODO implement this to use icon pack
-	return name
+	return fmt.Sprintf(
+		"https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/%s.png",
+		normalizeName(name),
+	)
+}
+
+func normalizeName(name string) string {
+	return spaceRegexp.ReplaceAllString(strings.TrimSpace(strings.ToLower(name)), "-")
 }
 
 func (app *App) validate() error {
