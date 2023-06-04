@@ -24,9 +24,15 @@ const (
 	healthcheckPollIntervalInSecondsLabel = "simplydash.healthcheck.pollIntervalInSeconds"
 )
 
-type DockerProvider struct {
+type DockerProvider interface {
+	Init() error
+	Stop()
+	GetApps() []App
+}
+
+type DockerProviderImpl struct {
 	apps       []App
-	configs    []DockerConfig
+	configs    map[string]DockerConfig
 	stopSignal chan struct{}
 }
 
@@ -35,30 +41,38 @@ type fetchResult struct {
 	err  []error
 }
 
-func NewDockerProvider(configs []DockerConfig) *DockerProvider {
-	return &DockerProvider{
+func NewDockerProvider(configs map[string]DockerConfig) DockerProvider {
+	return &DockerProviderImpl{
 		apps:       make([]App, 0),
 		configs:    configs,
 		stopSignal: make(chan struct{}, 1),
 	}
 }
 
-func Init() error {
+func (dp *DockerProviderImpl) GetApps() []App {
+	return dp.apps
+}
+
+func (dp *DockerProviderImpl) Init() error {
+	result := dp.fetchApps()
+	if len(result.err) > 0 {
+		return errors.Join(result.err...)
+	}
 	return nil
 }
 
-func (dockerProvider *DockerProvider) Stop() {
+func (dockerProvider *DockerProviderImpl) Stop() {
 	dockerProvider.stopSignal <- struct{}{}
 }
 
-func (dockerProvider *DockerProvider) fetchApps() fetchResult {
+func (dockerProvider *DockerProviderImpl) fetchApps() fetchResult {
 	waitGroup := sync.WaitGroup{}
 
-	resultByConfig := make(map[*DockerConfig]chan fetchResult)
-	for _, config := range dockerProvider.configs {
-		resultByConfig[&config] = make(chan fetchResult, 1)
+	resultByConfig := make(map[string]chan fetchResult)
+	for key, config := range dockerProvider.configs {
+		resultByConfig[key] = make(chan fetchResult, 1)
 		waitGroup.Add(1)
-		go fetch(&config, resultByConfig[&config], &waitGroup)
+		go fetch(&config, resultByConfig[key], &waitGroup)
 	}
 
 	return fetchResult{}

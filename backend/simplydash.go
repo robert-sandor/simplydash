@@ -17,7 +17,11 @@ func main() {
 		logrus.WithField("err", err).Fatal("config service failed to start")
 	}
 
-	routes := NewRoutes(configService)
+	dockerProvider := NewDockerProvider(configService.Get().Docker)
+
+	appService := NewAppService(configService, dockerProvider)
+
+	routes := NewRoutes(configService, appService)
 
 	httpServer := NewHttpServer(cliArgs, routes)
 	httpServer.Start()
