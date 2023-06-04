@@ -36,9 +36,7 @@ func DefaultConfig() *Config {
 }
 
 type DockerConfig struct {
-	Socket string `json:"socket" yaml:"socket"`
-	Host   string `json:"host"   yaml:"host"`
-	Port   int    `json:"port"   yaml:"port"`
+	Host string `json:"host" yaml:"host"`
 }
 
 const (

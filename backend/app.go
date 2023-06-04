@@ -12,6 +12,7 @@ import (
 type App struct {
 	Name        string         `yaml:"name"        json:"name"`
 	Description string         `yaml:"description" json:"description"`
+	Group       string         `yaml:"group"       json:"group"`
 	Link        string         `yaml:"link"        json:"link"`
 	Icon        string         `yaml:"icon"        json:"icon"`
 	Healthcheck AppHealthcheck `yaml:"healthcheck" json:"healthcheck"`
