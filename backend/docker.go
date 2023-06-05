@@ -32,7 +32,7 @@ type DockerProvider interface {
 }
 
 type DockerProviderImpl struct {
-	apps       []App
+	apps       map[string][]App
 	configs    map[string]DockerConfig
 	stopSignal chan struct{}
 }
@@ -44,23 +44,27 @@ type fetchResult struct {
 
 func NewDockerProvider(configs map[string]DockerConfig) DockerProvider {
 	return &DockerProviderImpl{
-		apps:       make([]App, 0),
+		apps:       make(map[string][]App, 0),
 		configs:    configs,
 		stopSignal: make(chan struct{}, 1),
 	}
 }
 
 func (dp *DockerProviderImpl) GetApps() []App {
-	return dp.apps
+	apps := make([]App, 0)
+	for _, app := range dp.apps {
+		apps = append(apps, app...)
+	}
+	logrus.WithField("appCount", len(apps)).Debug("apps from docker provider")
+	return apps
 }
 
 func (dp *DockerProviderImpl) Init() error {
 	logrus.Debug("initializing docker provider")
-	result := dp.fetchApps()
-	if len(result.err) > 0 {
-		return errors.Join(result.err...)
+	errs := dp.fetchApps()
+	if len(errs) > 0 {
+		return errors.Join(errs...)
 	}
-	dp.apps = result.apps
 	return nil
 }
 
@@ -68,7 +72,7 @@ func (dockerProvider *DockerProviderImpl) Stop() {
 	dockerProvider.stopSignal <- struct{}{}
 }
 
-func (dockerProvider *DockerProviderImpl) fetchApps() fetchResult {
+func (dockerProvider *DockerProviderImpl) fetchApps() []error {
 	logrus.Debug("fetching apps from docker")
 	waitGroup := sync.WaitGroup{}
 
@@ -82,24 +86,20 @@ func (dockerProvider *DockerProviderImpl) fetchApps() fetchResult {
 	logrus.Debug("waiting for goroutines to finish")
 	waitGroup.Wait()
 
-	result := fetchResult{
-		apps: make([]App, 0),
-		err:  make([]error, 0),
-	}
-	for _, resultByConfigChan := range resultByConfig {
+	errs := make([]error, 0)
+	for key, resultByConfigChan := range resultByConfig {
 		select {
 		case res, ok := <-resultByConfigChan:
 			if !ok {
-				result.err = append(result.err, errors.New("no result found"))
+				errs = append(errs, errors.New("no result found"))
 				continue
 			}
 
-			result.apps = append(result.apps, res.apps...)
-			result.err = append(result.err, res.err...)
+			dockerProvider.apps[key] = res.apps
 		}
 	}
 
-	return result
+	return errs
 }
 
 func fetch(dockerConfig *DockerConfig, result chan fetchResult, waitGroup *sync.WaitGroup) {
