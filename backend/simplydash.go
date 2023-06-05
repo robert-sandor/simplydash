@@ -18,6 +18,10 @@ func main() {
 	}
 
 	dockerProvider := NewDockerProvider(configService.Get().Docker)
+	dockerProvider.Init()
+	if err != nil {
+		logrus.WithField("err", err).Fatal("docker provider failed to start")
+	}
 
 	appService := NewAppService(configService, dockerProvider)
 

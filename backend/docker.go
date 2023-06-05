@@ -10,6 +10,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -54,10 +55,12 @@ func (dp *DockerProviderImpl) GetApps() []App {
 }
 
 func (dp *DockerProviderImpl) Init() error {
+	logrus.Debug("initializing docker provider")
 	result := dp.fetchApps()
 	if len(result.err) > 0 {
 		return errors.Join(result.err...)
 	}
+	dp.apps = result.apps
 	return nil
 }
 
@@ -66,6 +69,7 @@ func (dockerProvider *DockerProviderImpl) Stop() {
 }
 
 func (dockerProvider *DockerProviderImpl) fetchApps() fetchResult {
+	logrus.Debug("fetching apps from docker")
 	waitGroup := sync.WaitGroup{}
 
 	resultByConfig := make(map[string]chan fetchResult)
@@ -75,10 +79,31 @@ func (dockerProvider *DockerProviderImpl) fetchApps() fetchResult {
 		go fetch(&config, resultByConfig[key], &waitGroup)
 	}
 
-	return fetchResult{}
+	logrus.Debug("waiting for goroutines to finish")
+	waitGroup.Wait()
+
+	result := fetchResult{
+		apps: make([]App, 0),
+		err:  make([]error, 0),
+	}
+	for _, resultByConfigChan := range resultByConfig {
+		select {
+		case res, ok := <-resultByConfigChan:
+			if !ok {
+				result.err = append(result.err, errors.New("no result found"))
+				continue
+			}
+
+			result.apps = append(result.apps, res.apps...)
+			result.err = append(result.err, res.err...)
+		}
+	}
+
+	return result
 }
 
 func fetch(dockerConfig *DockerConfig, result chan fetchResult, waitGroup *sync.WaitGroup) {
+	logrus.WithField("config", dockerConfig).Debug("fetching apps from docker")
 	defer waitGroup.Done()
 
 	dockerClient, err := client.NewClientWithOpts(
@@ -86,11 +111,13 @@ func fetch(dockerConfig *DockerConfig, result chan fetchResult, waitGroup *sync.
 		client.WithHost(dockerConfig.Host),
 	)
 	if err != nil {
+		logrus.WithField("config", dockerConfig).WithField("err", err).Error("conneting to docker")
 		result <- fetchResult{
 			apps: []App{},
 			err:  []error{err},
 		}
 	}
+	logrus.WithField("config", dockerConfig).Debug("connected to docker")
 
 	containers, err := func() ([]types.Container, error) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -102,11 +129,13 @@ func fetch(dockerConfig *DockerConfig, result chan fetchResult, waitGroup *sync.
 		})
 	}()
 	if err != nil {
+		logrus.WithField("config", dockerConfig).WithField("err", err).Error("listing containers")
 		result <- fetchResult{
 			apps: []App{},
 			err:  []error{err},
 		}
 	}
+	logrus.WithField("container_count", len(containers)).Debug("listing containers")
 
 	res := fetchResult{
 		apps: make([]App, 0),
@@ -120,6 +149,8 @@ func fetch(dockerConfig *DockerConfig, result chan fetchResult, waitGroup *sync.
 			res.apps = append(res.apps, app)
 		}
 	}
+
+	logrus.WithField("result", res).Debug("returning apps")
 	result <- res
 }
 
