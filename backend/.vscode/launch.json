@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Package (launch.json)",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${fileDirname}",
+      "args": [
+        "--config-path",
+        ".local/config",
+        "--image-path",
+        ".local/images"
+      ]
+    }
+  ]
+}
