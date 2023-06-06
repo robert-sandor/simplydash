@@ -68,16 +68,16 @@ func (dp *DockerProviderImpl) Init() error {
 	return nil
 }
 
-func (dockerProvider *DockerProviderImpl) Stop() {
-	dockerProvider.stopSignal <- struct{}{}
+func (dp *DockerProviderImpl) Stop() {
+	dp.stopSignal <- struct{}{}
 }
 
-func (dockerProvider *DockerProviderImpl) fetchApps() []error {
+func (dp *DockerProviderImpl) fetchApps() []error {
 	logrus.Debug("fetching apps from docker")
 	waitGroup := sync.WaitGroup{}
 
 	resultByConfig := make(map[string]chan fetchResult)
-	for key, config := range dockerProvider.configs {
+	for key, config := range dp.configs {
 		resultByConfig[key] = make(chan fetchResult, 1)
 		waitGroup.Add(1)
 		go fetch(&config, resultByConfig[key], &waitGroup)
@@ -95,7 +95,7 @@ func (dockerProvider *DockerProviderImpl) fetchApps() []error {
 				continue
 			}
 
-			dockerProvider.apps[key] = res.apps
+			dp.apps[key] = res.apps
 		}
 	}
 
