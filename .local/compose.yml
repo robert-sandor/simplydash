@@ -1,0 +1,10 @@
+version: "3"
+
+services:
+  test1:
+    image: "alpine"
+    labels:
+      - "simplydash.enabled=true"
+      - "simplydash.name=test"
+      - "simplydash.group=docker"
+      - "simplydash.link=https://docker.com"
