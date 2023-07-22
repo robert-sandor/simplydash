@@ -1,3 +1,6 @@
 .DS_Store
 
-backend/.local
+
+local
+.idea
+build
