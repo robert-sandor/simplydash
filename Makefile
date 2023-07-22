@@ -21,3 +21,11 @@ dockerRun: dockerBuild
 		--name simplydash \
 		simplydash:dev
 
+dockerRunFromRemote: 
+	docker run --rm -p 8080:8080 \
+		-v ./local/config:/app/config \
+		-v ./local/images:/app/images \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		--name simplydash \
+		ghcr.io/robert-sandor/simplydash:dev
+
