@@ -5,12 +5,13 @@
 	import Websocket from '$lib/Websocket.svelte';
 	import SearchButton from '$lib/SearchButton.svelte';
 	import { onMount } from 'svelte';
+	import { baseUrl } from '$lib/utils';
 
 	let appGroups: AppGroup[] = [];
 	let appSettings = new AppSettings();
 
 	async function getSettings() {
-		const response = await fetch('http://localhost:8080/settings');
+		const response = await fetch(`${baseUrl()}/settings`);
 		if (response.status != 200) {
 			return
 		}
