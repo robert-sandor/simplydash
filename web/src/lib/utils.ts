@@ -11,6 +11,6 @@ export function baseUrl(): string {
 }
 
 export function websocketUrl(): string {
-    const websocketProtocol = window.location.protocol === ':https' ? 'wss' : 'ws';
+    const websocketProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
     return `${websocketProtocol}://${host()}/ws`;
 }
