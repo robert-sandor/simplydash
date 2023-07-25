@@ -81,13 +81,13 @@ func (svc *healthcheckServiceImpl) listen() {
 }
 
 type healthChecker struct {
+	updateCh chan<- string
+	stopCh   chan struct{}
+	ticker   *time.Ticker
 	url      string
 	interval time.Duration
 	timeout  time.Duration
 	health   AppHealth
-	updateCh chan<- string
-	stopCh   chan struct{}
-	ticker   *time.Ticker
 }
 
 func newHealthChecker(

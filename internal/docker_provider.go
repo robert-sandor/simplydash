@@ -34,12 +34,12 @@ type DockerProviderConfig struct {
 }
 
 type DockerProvider struct {
-	id               string
-	apps             []App
-	config           DockerProviderConfig
 	clientFunc       DockerClientFunc
 	logger           *log.Entry
 	notificationChan chan<- string
+	id               string
+	apps             []App
+	config           DockerProviderConfig
 }
 
 type DockerClientFunc func(config DockerProviderConfig) (client.APIClient, error)
