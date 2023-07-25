@@ -23,10 +23,10 @@ type appConfig struct {
 }
 
 type healthcheckConfig struct {
-	Enable   bool          `yaml:"enable"`
 	Link     string        `yaml:"link"`
 	Interval time.Duration `yaml:"interval"`
 	Timeout  time.Duration `yaml:"timeout"`
+	Enable   bool          `yaml:"enable"`
 }
 
 type FileProviderConfig struct {
@@ -34,12 +34,12 @@ type FileProviderConfig struct {
 }
 
 type FileProvider struct {
-	id               string
-	path             string
-	apps             []App
 	watcher          *fsnotify.Watcher
 	logger           *log.Entry
 	notificationChan chan<- string
+	id               string
+	path             string
+	apps             []App
 }
 
 func NewFileProvider(name string, config FileProviderConfig, notificationChan chan<- string) Provider {

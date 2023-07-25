@@ -24,13 +24,13 @@ func NewAppService(config Config, healthCheckService HealthcheckService) AppServ
 }
 
 type appServiceImpl struct {
-	config             Config
+	healthCheckService HealthcheckService
 	appsByProviderId   map[string][]App
 	providers          map[string]Provider
 	providerUpdateCh   <-chan string
-	healthCheckService HealthcheckService
 	updateCh           chan struct{}
 	logger             *log.Entry
+	config             Config
 }
 
 func (svc *appServiceImpl) GetApps() []AppGroup {

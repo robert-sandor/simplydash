@@ -4,25 +4,28 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
+	"strconv"
+	"time"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
-	"reflect"
-	"strconv"
-	"time"
 )
 
-const simplydash = "simplydash"
-const simplydashEnable = simplydash + ".enable"
-const simplydashName = simplydash + ".name"
-const simplydashLink = simplydash + ".link"
-const simplydashGroup = simplydash + ".group"
-const simplydashIcon = simplydash + ".icon"
-const simplydashDescription = simplydash + ".description"
-const simplydashHealthcheckEnable = simplydash + ".healthcheck.enable"
-const simplydashHealthcheckInterval = simplydash + ".healthcheck.interval"
-const simplydashHealthcheckTimeout = simplydash + ".healthcheck.timeout"
+const (
+	simplydash                    = "simplydash"
+	simplydashEnable              = simplydash + ".enable"
+	simplydashName                = simplydash + ".name"
+	simplydashLink                = simplydash + ".link"
+	simplydashGroup               = simplydash + ".group"
+	simplydashIcon                = simplydash + ".icon"
+	simplydashDescription         = simplydash + ".description"
+	simplydashHealthcheckEnable   = simplydash + ".healthcheck.enable"
+	simplydashHealthcheckInterval = simplydash + ".healthcheck.interval"
+	simplydashHealthcheckTimeout  = simplydash + ".healthcheck.timeout"
+)
 
 type DockerProviderConfig struct {
 	Host     string        `json:"host" yaml:"host"`
@@ -86,10 +89,8 @@ func (dp *DockerProvider) poll() {
 	defer ticker.Stop()
 
 	for {
-		select {
-		case <-ticker.C:
-			dp.fetch()
-		}
+		<-ticker.C
+		dp.fetch()
 	}
 }
 

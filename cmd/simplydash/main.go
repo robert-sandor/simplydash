@@ -44,7 +44,7 @@ func main() {
 
 	if args.AccessLogs {
 		e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
-			LogValuesFunc: func(c echo.Context, values middleware.RequestLoggerValues) error {
+			LogValuesFunc: func(_ echo.Context, values middleware.RequestLoggerValues) error {
 				log.WithFields(log.Fields{
 					"uri":           values.URI,
 					"latency":       values.Latency,

@@ -35,11 +35,9 @@ func (ws *WebsocketServer) Connect(id string, conn *websocket.Conn) {
 
 func (ws *WebsocketServer) run() {
 	for {
-		select {
-		case <-ws.appService.UpdateCh():
-			ws.logger.Debug("update received")
-			go ws.notifyConnections()
-		}
+		<-ws.appService.UpdateCh()
+		ws.logger.Debug("update received")
+		go ws.notifyConnections()
 	}
 }
 
@@ -63,11 +61,11 @@ func (ws *WebsocketServer) notifyConnections() {
 }
 
 type WebsocketConnection struct {
-	id       string
 	conn     *websocket.Conn
 	updateCh chan string
 	stopCh   chan struct{}
 	logger   *log.Entry
+	id       string
 }
 
 func NewWebsocketConnection(id string, conn *websocket.Conn) *WebsocketConnection {

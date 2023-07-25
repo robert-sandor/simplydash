@@ -73,12 +73,10 @@ func (svc *healthcheckServiceImpl) Updates() <-chan struct{} {
 
 func (svc *healthcheckServiceImpl) listen() {
 	for {
-		select {
-		case <-svc.checkersUpdateCh:
-			go func() {
-				svc.updateCh <- struct{}{}
-			}()
-		}
+		<-svc.checkersUpdateCh
+		go func() {
+			svc.updateCh <- struct{}{}
+		}()
 	}
 }
 
