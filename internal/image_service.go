@@ -52,17 +52,17 @@ func (svc *imageServiceImpl) downloadImage(u *url.URL, filePath string) error {
 		return err
 	}
 
-	file, err := os.Create(filePath)
-	if err != nil {
-		return err
-	}
-	defer closeSafe(file)
-
 	response, err := http.Get(u.String())
 	if err != nil {
 		return err
 	}
 	defer closeSafe(response.Body)
+
+	file, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer closeSafe(file)
 
 	_, err = io.Copy(file, response.Body)
 	return err
