@@ -13,7 +13,7 @@
 	async function getSettings() {
 		const response = await fetch(`${baseUrl()}/settings`);
 		if (response.status != 200) {
-			return
+			return;
 		}
 		appSettings = await response.json();
 	}
@@ -31,12 +31,14 @@
 </header>
 <div class="container mx-auto px-4">
 	{#each appGroups as appGroup}
-		<div class="m-2 text-neutral-800 dark:text-neutral-200">{appGroup.name}</div>
-		<div class="grid md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 grid-flow-row auto-cols gap-4">
-			{#each appGroup.apps as app}
-				<AppButton {app} />
-			{/each}
-		</div>
+		{#if appGroup.apps.length > 0}
+			<div class="m-2 text-neutral-800 dark:text-neutral-200">{appGroup.name}</div>
+			<div class="grid md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 grid-flow-row auto-cols gap-4">
+				{#each appGroup.apps as app}
+					<AppButton {app} />
+				{/each}
+			</div>
+		{/if}
 	{/each}
 </div>
 <footer class="container flex flex-wrap items-center justify-end mx-auto p-4">
