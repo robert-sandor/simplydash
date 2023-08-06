@@ -4,9 +4,15 @@
 
 	export let app: App;
 	export let showSelected = false;
+
+	let hideIcon = false;
 </script>
 
-<a href={app.link} class="focus:outline-none focus:ring outline-sky-500 rounded-lg ring-sky-500" class:ring={showSelected}>
+<a
+	href={app.link}
+	class="focus:outline-none focus:ring outline-sky-500 rounded-lg ring-sky-500"
+	class:ring={showSelected}
+>
 	<div
 		class="rounded-lg shadow-inner flex justify-end"
 		class:bg-neutral-300={app.healthcheck.health === 'unknown'}
@@ -36,6 +42,8 @@
 				class="object-contain w-12 h-12 bg-none m-4"
 				src="{baseUrl()}/image?url={app.icon}"
 				alt={app.name}
+				on:error={() => (hideIcon = true)}
+				class:invisible={hideIcon}
 			/>
 		</div>
 	</div>
