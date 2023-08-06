@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -57,6 +58,10 @@ func (svc *imageServiceImpl) downloadImage(u *url.URL, filePath string) error {
 		return err
 	}
 	defer closeSafe(response.Body)
+
+	if response.StatusCode >= 400 {
+		return fmt.Errorf("got status code %d", response.StatusCode)
+	}
 
 	file, err := os.Create(filePath)
 	if err != nil {
