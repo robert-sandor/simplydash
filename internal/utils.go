@@ -1,12 +1,13 @@
 package internal
 
 import (
-	"github.com/sirupsen/logrus"
 	"sort"
+
+	"github.com/sirupsen/logrus"
 )
 
 func insertOrdered(apps []App, app App) []App {
-	i := sort.Search(len(apps), func(i int) bool { return apps[i].Name == app.Name })
+	i := sort.Search(len(apps), func(i int) bool { return apps[i].Name > app.Name })
 
 	if i == len(apps) {
 		return append(apps, app)
