@@ -1,5 +1,5 @@
 # backend build
-FROM golang:1.20-alpine as backendBuild
+FROM golang:1.21-alpine as backendBuild
 
 WORKDIR /app
 
