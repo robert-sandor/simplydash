@@ -16,11 +16,10 @@ FROM node:20-alpine as frontendBuild
 WORKDIR /app
 COPY ./web .
 
-RUN npm install
-RUN npm run build
+RUN npm install && npm run build
 
 # final image
-FROM alpine
+FROM alpine:3
 
 WORKDIR /app
 
