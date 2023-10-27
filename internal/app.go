@@ -7,8 +7,6 @@ import (
 	"regexp"
 	"strings"
 	"time"
-
-	log "github.com/sirupsen/logrus"
 )
 
 type App struct {
@@ -101,8 +99,7 @@ func (app *App) Validate() (errs []error) {
 }
 
 func (app *App) resolveIconUrl() {
-	if url, err := url.ParseRequestURI(app.Icon); err == nil {
-		log.Debug(url)
+	if _, err := url.ParseRequestURI(app.Icon); err == nil {
 		return
 	}
 

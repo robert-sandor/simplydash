@@ -5,8 +5,6 @@ import (
 	"log/slog"
 	"os"
 	"sort"
-
-	"github.com/sirupsen/logrus"
 )
 
 func insertOrdered(apps []App, app App) []App {
@@ -42,21 +40,4 @@ func SetupSlog(args Args) {
 	}
 
 	slog.SetDefault(slog.New(handler))
-}
-
-func SetupLogging(args Args) {
-	level, err := logrus.ParseLevel(args.Log.Level)
-	if err != nil {
-		level = logrus.WarnLevel
-	}
-	logrus.SetLevel(level)
-
-	if args.Log.Type == "json" {
-		logrus.SetFormatter(&logrus.JSONFormatter{})
-	} else {
-		logrus.SetFormatter(&logrus.TextFormatter{
-			FullTimestamp:    true,
-			QuoteEmptyFields: true,
-		})
-	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"reflect"
 	"strconv"
 	"time"
@@ -11,7 +12,6 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -35,7 +35,7 @@ type DockerProviderConfig struct {
 
 type DockerProvider struct {
 	clientFunc       DockerClientFunc
-	logger           *log.Entry
+	logger           *slog.Logger
 	notificationChan chan<- string
 	id               string
 	apps             []App
@@ -62,7 +62,7 @@ func NewDockerProvider(name string, config DockerProviderConfig, notificationCha
 		config:           config,
 		clientFunc:       RealDockerClientFunc(),
 		notificationChan: notificationChan,
-		logger:           log.WithField("id", id),
+		logger:           slog.With("id", id),
 	}
 }
 
@@ -97,7 +97,7 @@ func (dp *DockerProvider) poll() {
 func (dp *DockerProvider) fetch() {
 	dockerClient, err := dp.clientFunc(dp.config)
 	if err != nil {
-		dp.logger.WithError(err).Error("docker client")
+		dp.logger.Error("docker client", "error", err)
 		return
 	}
 
@@ -114,7 +114,7 @@ func (dp *DockerProvider) fetch() {
 		Filters: filters.NewArgs(filters.Arg("label", simplydashEnable)),
 	})
 	if err != nil {
-		dp.logger.WithError(err).Error("list containers")
+		dp.logger.Error("list containers", "error", err)
 		return
 	}
 
@@ -123,7 +123,7 @@ func (dp *DockerProvider) fetch() {
 		app := dp.containerToApp(container)
 		errs := app.Validate()
 		if len(errs) > 0 {
-			dp.logger.WithError(errors.Join(errs...)).Error("invalid app specification")
+			dp.logger.Error("invalid app specification", "error", errors.Join(errs...))
 		} else {
 			apps = insertOrdered(apps, app)
 		}
@@ -159,7 +159,7 @@ func boolFromLabel(container types.Container, label string, defaultValue bool) b
 
 	boolVal, err := strconv.ParseBool(stringVal)
 	if err != nil {
-		log.WithError(err).Warnf("invalid bool value for label '%s'", label)
+		slog.Error("invalid bool value for label", "error", err, "label", label)
 		return defaultValue
 	}
 	return boolVal
@@ -173,12 +173,12 @@ func durationFromLabel(container types.Container, label string, defaultValue tim
 
 	durationVal, err := time.ParseDuration(stringVal)
 	if err != nil {
-		log.WithError(err).Warnf("invalid bool value for label '%s'", label)
+		slog.Error("invalid bool value for label", "error", err, "label", label)
 		return defaultValue
 	}
 
 	if durationVal <= 0 {
-		log.Warnf("expected positive duration for label '%s'", label)
+		slog.Error("expected positive duration for label", "error", err, "label", label)
 		return defaultValue
 	}
 

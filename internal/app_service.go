@@ -1,6 +1,8 @@
 package internal
 
-import log "github.com/sirupsen/logrus"
+import (
+	"log/slog"
+)
 
 type AppService interface {
 	Init()
@@ -19,7 +21,7 @@ func NewAppService(config Config, healthCheckService HealthcheckService) AppServ
 		providers:          providers,
 		providerUpdateCh:   providerUpdateCh,
 		updateCh:           make(chan struct{}, 1),
-		logger:             log.WithField("name", "app-service"),
+		logger:             slog.With("name", "app-service"),
 	}
 }
 
@@ -29,7 +31,7 @@ type appServiceImpl struct {
 	providers          map[string]Provider
 	providerUpdateCh   <-chan string
 	updateCh           chan struct{}
-	logger             *log.Entry
+	logger             *slog.Logger
 	config             Config
 }
 
@@ -68,7 +70,7 @@ func (svc *appServiceImpl) Init() {
 	for _, provider := range svc.providers {
 		err := provider.Init()
 		if err != nil {
-			log.WithField("providerId", provider.ID()).WithError(err).Error("init provider")
+			svc.logger.Error("initializing provider", "error", err, "providerId", provider.ID())
 			continue
 		}
 
@@ -85,7 +87,7 @@ func (svc *appServiceImpl) listen() {
 	for {
 		select {
 		case providerId := <-svc.providerUpdateCh:
-			log.WithField("providerId", providerId).Debug("got update from provider")
+			svc.logger.Debug("got update from provider", "providerId", providerId)
 			go svc.updateApps(providerId)
 		case <-svc.healthCheckService.Updates():
 			svc.logger.Debug("got update from healthcheck")
@@ -103,7 +105,7 @@ func (svc *appServiceImpl) updateApps(id string) {
 }
 
 func (svc *appServiceImpl) notify() {
-	log.Debug("sending update notification")
+	svc.logger.Debug("sending update notification")
 	svc.updateCh <- struct{}{}
 }
 

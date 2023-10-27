@@ -3,12 +3,11 @@ package internal
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
-
-	log "github.com/sirupsen/logrus"
 )
 
 type ImageService interface {
@@ -76,6 +75,6 @@ func (svc *imageServiceImpl) downloadImage(u *url.URL, filePath string) error {
 func closeSafe(c io.Closer) {
 	err := c.Close()
 	if err != nil {
-		log.WithError(err).Warn("closing resource")
+		slog.Error("unexpected error when closing resource", "error", err)
 	}
 }

@@ -2,11 +2,10 @@ package internal
 
 import (
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
-
-	log "github.com/sirupsen/logrus"
 )
 
 type HealthcheckService interface {
@@ -88,6 +87,7 @@ type healthChecker struct {
 	interval time.Duration
 	timeout  time.Duration
 	health   AppHealth
+	logger   *slog.Logger
 }
 
 func newHealthChecker(
@@ -103,6 +103,7 @@ func newHealthChecker(
 		health:   Unknown,
 		updateCh: checkerUpdateCh,
 		stopCh:   make(chan struct{}, 1),
+		logger:   slog.With("module", "healthcheck", "url", url),
 	}
 	go checker.updateHealth()
 	go checker.run()
@@ -140,7 +141,7 @@ func (h *healthChecker) healthCheck() AppHealth {
 	client := http.Client{Timeout: h.timeout}
 	response, err := client.Get(h.url)
 	if err != nil {
-		log.WithField("url", h.url).WithError(err).Warn("healthcheck error")
+		h.logger.Error("http error", "error", err)
 		if os.IsTimeout(err) {
 			return Timeout
 		} else {
@@ -152,15 +153,13 @@ func (h *healthChecker) healthCheck() AppHealth {
 	}(response.Body)
 
 	if response.StatusCode >= 400 {
-		log.WithField("url", h.url).
-			WithField("code", response.StatusCode).
-			Warn("healthcheck status")
+		h.logger.Warn("http status code", "statusCode", response.StatusCode)
 		if response.StatusCode == 404 || response.StatusCode >= 500 {
 			return Error
 		}
 		return Warning
 	}
 
-	log.WithField("url", h.url).Debug("healthcheck")
+	h.logger.Debug("success")
 	return Healthy
 }

@@ -3,13 +3,13 @@ package internal
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"reflect"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
@@ -35,7 +35,7 @@ type FileProviderConfig struct {
 
 type FileProvider struct {
 	watcher          *fsnotify.Watcher
-	logger           *log.Entry
+	logger           *slog.Logger
 	notificationChan chan<- string
 	id               string
 	path             string
@@ -49,7 +49,7 @@ func NewFileProvider(name string, config FileProviderConfig, notificationChan ch
 		path:             config.Path,
 		apps:             make([]App, 0),
 		notificationChan: notificationChan,
-		logger:           log.WithField("id", id),
+		logger:           slog.With("id", id),
 	}
 }
 
@@ -92,7 +92,7 @@ func (fp *FileProvider) watch() {
 	for {
 		select {
 		case err := <-fp.watcher.Errors:
-			fp.logger.WithError(err).Error("fsnotify")
+			fp.logger.Error("fsnotify", "error", err)
 			return
 		case event := <-fp.watcher.Events:
 			if event.Has(fsnotify.Write) {
@@ -105,14 +105,14 @@ func (fp *FileProvider) watch() {
 func (fp *FileProvider) parseFile() {
 	bytes, err := os.ReadFile(fp.path)
 	if err != nil {
-		fp.logger.WithField("path", fp.path).WithError(err).Error("reading file")
+		fp.logger.Error("reading file", "path", fp.path, "error", err)
 		return
 	}
 
 	appConfigs := make([]appConfig, 0)
 	err = yaml.Unmarshal(bytes, &appConfigs)
 	if err != nil {
-		fp.logger.WithField("path", fp.path).WithError(err).Error("parsing yaml")
+		fp.logger.Error("parsing yaml", "path", fp.path, "error", err)
 		return
 	}
 
@@ -121,7 +121,7 @@ func (fp *FileProvider) parseFile() {
 		app := appConfig.toApp()
 		errs := app.Validate()
 		if len(errs) > 0 {
-			fp.logger.WithField("appConfig", appConfig).WithError(errors.Join(errs...)).Error("invalid app config")
+			fp.logger.Error("invalid app config", "appConfig", appConfig, "error", errors.Join(errs...))
 		} else {
 			apps = insertOrdered(apps, app)
 		}

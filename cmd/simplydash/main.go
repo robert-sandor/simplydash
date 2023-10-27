@@ -16,7 +16,6 @@ import (
 
 func main() {
 	args := internal.GetArgs()
-	internal.SetupLogging(args)
 	internal.SetupSlog(args)
 
 	slog.LogAttrs(context.Background(), slog.LevelDebug, "loading config",

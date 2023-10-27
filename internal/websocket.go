@@ -2,22 +2,22 @@ package internal
 
 import (
 	"encoding/json"
+	"log/slog"
 
 	"github.com/gorilla/websocket"
-	log "github.com/sirupsen/logrus"
 )
 
 type WebsocketServer struct {
 	appService  AppService
 	connections map[string]*WebsocketConnection
-	logger      *log.Entry
+	logger      *slog.Logger
 }
 
 func NewWebsocketServer(appService AppService) *WebsocketServer {
 	return &WebsocketServer{
 		appService:  appService,
 		connections: make(map[string]*WebsocketConnection),
-		logger:      log.WithField("name", "websocket-server"),
+		logger:      slog.With("name", "websocket-server"),
 	}
 }
 
@@ -27,7 +27,7 @@ func (ws *WebsocketServer) Init() {
 }
 
 func (ws *WebsocketServer) Connect(id string, conn *websocket.Conn) {
-	log.WithField("id", id).Debug("websocket client connected")
+	ws.logger.Debug("client connected", "id", id)
 	connection := NewWebsocketConnection(id, conn)
 	connection.Init(ws.getAppsAsString())
 	ws.connections[id] = connection
@@ -46,7 +46,7 @@ func (ws *WebsocketServer) getAppsAsString() string {
 
 	bytes, err := json.Marshal(apps)
 	if err != nil {
-		ws.logger.WithError(err).Error("marshalling json")
+		ws.logger.Error("marshalling json", "error", err)
 	}
 
 	return string(bytes)
@@ -55,7 +55,7 @@ func (ws *WebsocketServer) getAppsAsString() string {
 func (ws *WebsocketServer) notifyConnections() {
 	jsonString := ws.getAppsAsString()
 	for _, conn := range ws.connections {
-		ws.logger.WithField("connectionId", conn.id).Debug("sending message")
+		ws.logger.Debug("sending message", "connectionId", conn.id)
 		conn.updateCh <- jsonString
 	}
 }
@@ -64,7 +64,7 @@ type WebsocketConnection struct {
 	conn     *websocket.Conn
 	updateCh chan string
 	stopCh   chan struct{}
-	logger   *log.Entry
+	logger   *slog.Logger
 	id       string
 }
 
@@ -74,7 +74,7 @@ func NewWebsocketConnection(id string, conn *websocket.Conn) *WebsocketConnectio
 		conn:     conn,
 		updateCh: make(chan string, 1),
 		stopCh:   make(chan struct{}, 1),
-		logger:   log.WithField("id", id),
+		logger:   slog.With("name", "websocket-connection", "id", id),
 	}
 }
 
@@ -104,7 +104,7 @@ func (wc *WebsocketConnection) sendMessage(message string) {
 	wc.logger.Debug("sending message to websocket")
 	err := wc.conn.WriteMessage(websocket.TextMessage, []byte(message))
 	if err != nil {
-		wc.logger.WithError(err).Error("websocket message")
+		wc.logger.Error("writing message", "error", err)
 		wc.stopCh <- struct{}{}
 	}
 }
