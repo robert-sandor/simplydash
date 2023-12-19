@@ -47,7 +47,7 @@ func (svc *imageServiceImpl) Get(urlString string) (string, error) {
 }
 
 func (svc *imageServiceImpl) downloadImage(u *url.URL, filePath string) error {
-	err := os.MkdirAll(path.Dir(filePath), 0755)
+	err := os.MkdirAll(path.Dir(filePath), 0o755)
 	if err != nil {
 		return err
 	}

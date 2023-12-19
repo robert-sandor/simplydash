@@ -1,12 +1,13 @@
 package internal
 
 import (
-	"github.com/gorilla/websocket"
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/gorilla/websocket"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func SetupRouting(e *echo.Echo, websocketServer *WebsocketServer, imageService ImageService, config Config) {

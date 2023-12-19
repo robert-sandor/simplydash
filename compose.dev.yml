@@ -1,0 +1,20 @@
+version: "3"
+
+services:
+  simplydash:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: simplydash:dev
+    develop:
+      watch:
+        - path: cmd
+          action: rebuild
+        - path: internal
+          action: rebuild
+        - path: go.mod
+          action: rebuild
+        - path: go.sum
+          action: rebuild
+        - path: web
+          action: rebuild

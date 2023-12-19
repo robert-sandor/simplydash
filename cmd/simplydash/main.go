@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/robert-sandor/simplydash/internal"
 	"log/slog"
 	"os"
+
+	"github.com/robert-sandor/simplydash/internal"
 )
 
 func main() {

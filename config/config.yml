@@ -1,0 +1,6 @@
+providers:
+    file: {}
+    docker: {}
+app:
+    name: simplydash
+    groups: []

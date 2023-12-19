@@ -1,10 +1,11 @@
 package internal
 
 import (
-	"github.com/docker/docker/api/types"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/docker/docker/api/types"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_boolFromLabel(t *testing.T) {

@@ -1,0 +1,15 @@
+version: "3"
+
+services:
+  simplydash:
+    image: ghcr.io/robert-sandor/simplydash:latest
+    restart: unless-stopped
+    ports:
+      - 8080:8080
+    volumes:
+      - ./config:/app/config
+      - images:/app/images
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  images:

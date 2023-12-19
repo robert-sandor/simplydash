@@ -59,7 +59,7 @@ func GetConfig(args Args) (Config, error) {
 }
 
 func createConfigFile(configPath string, config Config) {
-	err := os.MkdirAll(path.Dir(configPath), 0755)
+	err := os.MkdirAll(path.Dir(configPath), 0o755)
 	if err != nil {
 		slog.Error("failed to create config dir", "configPath", configPath, "err", err)
 		return

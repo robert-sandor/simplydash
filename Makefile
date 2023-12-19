@@ -29,3 +29,8 @@ dockerRunFromRemote:
 		--name simplydash \
 		ghcr.io/robert-sandor/simplydash:dev
 
+compose-dev:
+	docker compose -f compose.yml -f compose.dev.yml up
+
+compose-dev-down:
+	docker compose -f compose.yml -f compose.dev.yml down -v

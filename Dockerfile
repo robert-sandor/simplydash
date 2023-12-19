@@ -30,4 +30,4 @@ VOLUME ["/app/config", "/app/images"]
 
 EXPOSE 8080
 
-ENTRYPOINT ["./simplydash", "-c", "config/config.yml", "-i", "images"]
+ENTRYPOINT ["./simplydash"]

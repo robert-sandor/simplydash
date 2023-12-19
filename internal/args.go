@@ -8,7 +8,7 @@ type Args struct {
 	ConfigFile    string `name:"config"      default:"./config/config.yml"                        help:"Path to config file"         short:"c"`
 	ImageCacheDir string `name:"image-cache" default:"./images"                                   help:"Path to dir to store images" short:"i"`
 	Log           struct {
-		Level string `name:"level" default:"warn" help:"log level" enum:"trace,debug,info,warn,error,fatal,panic"`
+		Level string `name:"level" default:"info" help:"log level" enum:"trace,debug,info,warn,error,fatal,panic"`
 		Type  string `name:"type" default:"text" help:"log type" enum:"text,json"`
 	} `embed:"" prefix:"log-"`
 	AccessLogs bool `name:"access-logs" default:"false" help:"enable access logs" type:"boolean"`
