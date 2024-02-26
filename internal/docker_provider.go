@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/docker/docker/api/types/container"
 	"log/slog"
 	"reflect"
 	"strconv"
@@ -104,7 +105,7 @@ func (dp *DockerProvider) fetch() {
 	ctx, cancel := context.WithTimeout(context.Background(), dp.config.Interval)
 	defer cancel()
 
-	containers, err := dockerClient.ContainerList(ctx, types.ContainerListOptions{
+	containers, err := dockerClient.ContainerList(ctx, container.ListOptions{
 		Size:    false,
 		All:     true,
 		Latest:  false,
@@ -119,8 +120,8 @@ func (dp *DockerProvider) fetch() {
 	}
 
 	apps := make([]App, 0)
-	for _, container := range containers {
-		app := dp.containerToApp(container)
+	for _, ct := range containers {
+		app := dp.containerToApp(ct)
 		errs := app.Validate()
 		if len(errs) > 0 {
 			dp.logger.Error("invalid app specification", "error", errors.Join(errs...))
